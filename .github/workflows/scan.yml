@@ -1,0 +1,46 @@
+name: market-scan
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # top of each hour
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies (none required)
+        run: npm ci || echo "no deps"
+
+      - name: Run scanner
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          THRESHOLD: ${{ secrets.THRESHOLD || '2.5' }}
+          MAX_SYMBOLS: ${{ secrets.MAX_SYMBOLS || '500' }}
+          BATCH_DELAY_MS: ${{ secrets.BATCH_DELAY_MS || '1200' }}
+          DAYS: ${{ secrets.DAYS || '120' }}
+          COOLDOWN_HOURS: ${{ secrets.COOLDOWN_HOURS || '24' }}
+        run: node scan.js
+
+      - name: Commit alerts history if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add alerts_history.json || true
+          if ! git diff --staged --quiet; then
+            git commit -m "Update alerts_history.json [ci skip]" || true
+            git push
+          else
+            echo "No changes to commit."
+          fi

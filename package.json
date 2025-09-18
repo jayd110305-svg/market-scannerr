@@ -1,0 +1,13 @@
+{
+  "name": "market-scanner",
+  "version": "1.0.0",
+  "description": "Market scanner that posts Discord alerts (GitHub Actions)",
+  "main": "scan.js",
+  "scripts": {
+    "start": "node scan.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}
